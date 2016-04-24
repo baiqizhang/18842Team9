@@ -74,10 +74,14 @@ func dialPeer(peerAddr string) {
 	go func() {
 		fmt.Println("[dialPeer]: sending HB to " + peerAddr)
 		for {
-			writer.WriteString("HEARTBEAT " + port + "\n")
+			_, err := writer.WriteString("HEARTBEAT " + port + "\n")
 			writer.Flush()
 			time.Sleep(1000 * time.Millisecond)
+			if err != nil {
+				break
+			}
 		}
+		fmt.Println("[dialPeer] HB to " + peerAddr + " failed")
 	}()
 
 	// Read message that comes from the dialed node(active connection)
