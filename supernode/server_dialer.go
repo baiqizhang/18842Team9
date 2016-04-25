@@ -7,7 +7,6 @@ import (
 	"io"
 	"math"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -59,44 +58,30 @@ func processCommand(cmd string) {
 	}
 
 	//Compute distance to the customer
+	finalResult := math.MaxFloat64
+	var finalAddr string
 	if args[0] == "PICKUP" {
-		//Pickup the customer
-		//source := util.ParseFloatCoordinates(args[1], args[2])
+		source := util.ParseFloatCoordinates(args[1], args[2])
 		//dest := util.ParseFloatCoordinates(args[3], args[4])
-		source := args[1] + " " + args[2]
-		dest := args[3] + " " + args[4]
-		// if source == nil || dest == nil {
-		// 	fmt.Println("Error: incorrect PICKUP format:" + cmd)
-		// 	return
-		// }
-
-		fmt.Println("In processCommand: " + strconv.Itoa(COUNTCAR))
-		request := util.Request{math.MaxFloat64, nil, "", COUNTCAR, source, dest}
-
-		fmt.Println("args[5] =  " + args[5])
-		REQMAP[args[5]] = request
-		fmt.Println("In MAP: " + strconv.Itoa(REQMAP[args[5]].Count))
-
-		fmt.Println("ID:" + args[5] + " counter" + strconv.Itoa(COUNTCAR))
-
-		var zero []byte
-		for _, client := range clients {
-			if client.Type == "NODE" {
-				continue
+		for carNodeAddr, position := range idleCarNodePosition {
+			fmt.Print("[PICKUP] CNAddr: " + carNodeAddr + " pos:")
+			fmt.Print(position.X)
+			fmt.Print(" ")
+			fmt.Print(position.Y)
+			fmt.Print(" dist: ")
+			dist := position.DistanceTo(*source)
+			if dist < finalResult {
+				finalResult = dist
+				finalAddr = carNodeAddr
 			}
-			fmt.Println("client " + client.Type + " " + client.Name)
-			conn := client.Conn
-			fmt.Println(conn.RemoteAddr().String())
-			reader := bufio.NewReader(conn)
-			_, err := reader.Read(zero)
-			if err != nil {
-				continue
-			}
-
-			fmt.Println("[COMPUTE] send to CarNode:" + client.Conn.RemoteAddr().String())
-			writer := bufio.NewWriter(conn)
-			writer.WriteString("COMPUTE " + args[1] + " " + args[2] + " " + args[5] + "\n")
-			writer.Flush()
+			fmt.Println(dist)
 		}
+		fmt.Print("[PICKUP] final result: " + finalAddr + " = ")
+		fmt.Println(finalResult)
+
+		// tell the CarNode to pickup
+		writer := bufio.NewWriter(carNodeConn[finalAddr])
+		writer.WriteString("PICKUP " + args[1] + " " + args[2] + " " + args[3] + " " + args[4] + "\n")
+		writer.Flush()
 	}
 }

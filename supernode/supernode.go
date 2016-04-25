@@ -26,7 +26,7 @@ func main() {
 		os.Exit(0)
 	}
 	port = args[0]
-	name = args[2]
+	//name = args[2]
 	for _, arg := range args {
 		if arg == "-v" {
 			util.Verbose = 1

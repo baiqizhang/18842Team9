@@ -5,7 +5,6 @@ import (
 	"container/list"
 	"dsproject/util"
 	"fmt"
-	"math"
 	"net"
 	"os"
 	"strconv"
@@ -61,7 +60,7 @@ func getSupernodesAddr() list.List {
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	conn.Write([]byte("NODE REGISTER CAR1\n"))
+	conn.Write([]byte("NODE REGISTER\n"))
 
 	// build a table of supernodes' IP
 	connbuf := bufio.NewReader(conn)
@@ -89,6 +88,9 @@ func dialSuperNode(supernode string) {
 	connbuf := bufio.NewReader(conn)
 	for {
 		cmd, _ := connbuf.ReadString('\n')
+		if util.Verbose == 1 {
+			fmt.Println("[dialSuperNode] cmd:" + cmd)
+		}
 		processCommand(cmd, conn)
 	}
 }
@@ -97,22 +99,21 @@ func dialSuperNode(supernode string) {
 func processCommand(cmd string, conn net.Conn) {
 	args := strings.Split(strings.Trim(cmd, "\r\n"), " ")
 
-	//Compute distance to the customer
-	if args[0] == "COMPUTE" {
-		var distance float64
-
-		//if not idle, return -1
-		if virtualCar.Idle {
-			point := util.ParseFloatCoordinates(args[1], args[2])
-			distance = point.DistanceTo(virtualCar.Location)
-		} else {
-			distance = math.MaxFloat64
-		}
+	// on heartbeat, send location to SN
+	if args[0] == "HEARTBEAT" {
 		writer := bufio.NewWriter(conn)
-		fmt.Println(args[3])
-		writer.WriteString("COMPUTERESULT " + virtualCar.Name + " " + strconv.FormatFloat(distance, 'f', 4, 64) + " " + args[1] + " " + args[2] + " " + args[3] + "\n")
+		writer.WriteString("POSITION ")
+		writer.WriteString(strconv.FormatFloat(virtualCar.Location.X, 'f', 4, 64) + " ")
+		writer.WriteString(strconv.FormatFloat(virtualCar.Location.Y, 'f', 4, 64) + " ")
+		if virtualCar.Idle {
+			writer.WriteString("IDLE\n")
+		} else {
+			writer.WriteString("BUSY\n")
+		}
 		writer.Flush()
 	} else if args[0] == "PICKUP" {
+		fmt.Println("[PICKUP] " + cmd)
+
 		//Pickup the customer
 		source := util.ParseFloatCoordinates(args[1], args[2])
 		dest := util.ParseFloatCoordinates(args[3], args[4])
