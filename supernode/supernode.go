@@ -8,6 +8,7 @@ import (
 
 var port string
 var clients []util.Client
+var name string
 
 //REQMAP map for <request id, request struct>
 var REQMAP = make(map[string]util.Request)
@@ -25,6 +26,7 @@ func main() {
 		os.Exit(0)
 	}
 	port = args[0]
+	name = args[2]
 	for _, arg := range args {
 		if arg == "-v" {
 			util.Verbose = 1
@@ -36,6 +38,7 @@ func main() {
 
 	// listen to peer(SuperNode) connection in Ring Topology
 	go listenPeer()
+	go listenHeart()
 
 	// listen to node connection requests? (not sure if is required)
 	listenCarNode()

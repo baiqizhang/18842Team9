@@ -26,7 +26,6 @@ func dialServer() {
 	go func() {
 		for {
 			writer := bufio.NewWriter(conn)
-            /* SN heartbeat from the port of the SN*/
 			writer.WriteString("SUPERNODE HEARTBEAT " + port + "\n")
 			writer.Flush()
 			time.Sleep(1000 * time.Millisecond)
@@ -34,7 +33,7 @@ func dialServer() {
 	}()
 
 	reader := bufio.NewReader(conn)
-	// Read handler for communication with tracker
+	// Read handler
 	for {
 		message, err := reader.ReadString('\n')
 		if err == io.EOF {
@@ -54,7 +53,9 @@ func processCommand(cmd string) {
 	//Compute distance to the customer
 	if args[0] == "PEERADDR" {
 		peerAddr := args[1]
+		words := strings.Split(peerAddr, ":")
 		go dialPeer(peerAddr)
+		go dialHeart(words[0] + ":" + next_next_port(words[1]))
 	}
 
 	//Compute distance to the customer
