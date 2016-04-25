@@ -65,9 +65,10 @@ func handleClient(client *util.Client) {
 
 		words := strings.Split(strings.Trim(message, "\r\n"), " ")
 
-		// if connection comes from CarNode
+		// if connection comes from SuperNode
 		client.Type = words[0]
 		if words[0] == "SUPERNODE" {
+            /*new is for the present connection*/
 			newSNAddr := client.Conn.RemoteAddr()
 			newSNIPStr := newSNAddr.(*net.TCPAddr).IP.String()
 			newSNPortStr := words[2]
@@ -84,7 +85,7 @@ func handleClient(client *util.Client) {
 					writer.WriteString("PEERADDR " + lastSNAddr.(*net.TCPAddr).IP.String() + ":" + lastSNClient.Name + "\n")
 					writer.Flush()
 
-					// close the ring when node count = 2
+					/* close the ring when node count = 2 by sending new SN peer info to the first SN */
 					fmt.Println(superNodeAliveCounter)
 					if len(superNodeAliveCounter) == 2 {
 						tempWriter := bufio.NewWriter(lastSNClient.Conn)
