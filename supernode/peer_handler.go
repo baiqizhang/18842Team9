@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 )
 
 var lastClient *util.Client // = nil
@@ -34,7 +34,7 @@ func listenPeer() {
 func listenHeart() {
 	heartport := next_next_port(port)
 	fmt.Println("Supernode Listening at " + heartport + " for Heartbeat connection")
-	listener, err := net.Listen("tcp", ":" + heartport)
+	listener, err := net.Listen("tcp", ":"+heartport)
 	util.CheckError(err)
 
 	heart := 1
@@ -42,18 +42,16 @@ func listenHeart() {
 		conn, err := listener.Accept()
 		util.CheckError(err)
 
-//		go func() {
-			reader := bufio.NewReader(conn)
-			for {
-				msg, err := reader.ReadString('\n')
-				if err != nil {
-					conn.Close()
-					break
-				}
-				fmt.Println(msg)
-				heart = 1
+		reader := bufio.NewReader(conn)
+		for {
+			msg, err := reader.ReadString('\n')
+			if err != nil {
+				conn.Close()
+				break
 			}
-//		}()
+			fmt.Println("[listenHeart] " + msg)
+			heart = 1
+		}
 
 		go func() {
 			for {
@@ -143,7 +141,7 @@ func dialHeart(peerAddr string) {
 	writer := bufio.NewWriter(heartConn)
 
 	for {
-		writer.WriteString("HEARTBEAT from " + name + "\n")
+		writer.WriteString("HEARTBEAT from " + port + "\n")
 		writer.Flush()
 		time.Sleep(1000 * time.Millisecond)
 	}
