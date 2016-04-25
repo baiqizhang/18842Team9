@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-var lastSNClient *util.Client // = nil
-
 var superNodeAliveCounter = make(map[string]int)
 var aliveSuperNodeAddrs []string
 var l sync.Mutex
@@ -68,7 +66,7 @@ func handleClient(client *util.Client) {
 		// if connection comes from SuperNode
 		client.Type = words[0]
 		if words[0] == "SUPERNODE" {
-            /*new is for the present connection*/
+			/*new is for the present connection*/
 			newSNAddr := client.Conn.RemoteAddr()
 			newSNIPStr := newSNAddr.(*net.TCPAddr).IP.String()
 			newSNPortStr := words[2]
@@ -79,21 +77,19 @@ func handleClient(client *util.Client) {
 			if words[1] == "REGISTER" {
 				fmt.Print("[SuperNode]" + message)
 				client.Name = newSNPortStr
-				if lastSNClient != nil {
-					//tell the newcomer the last supernode's ip:port
-					lastSNAddr := lastSNClient.Conn.RemoteAddr()
-					writer.WriteString("PEERADDR " + lastSNAddr.(*net.TCPAddr).IP.String() + ":" + lastSNClient.Name + "\n")
-					writer.Flush()
-
-					/* close the ring when node count = 2 by sending new SN peer info to the first SN */
-					fmt.Println(superNodeAliveCounter)
-					if len(superNodeAliveCounter) == 2 {
-						tempWriter := bufio.NewWriter(lastSNClient.Conn)
-						tempWriter.WriteString("PEERADDR " + newSNIPStr + ":" + newSNPortStr + "\n")
-						tempWriter.Flush()
+				fmt.Println(superNodeAliveCounter)
+				if len(superNodeAliveCounter) > 1 {
+					for addr := range superNodeAliveCounter {
+						if addr != (newSNIPStr + ":" + newSNPortStr) {
+							writer.WriteString("PEERADDR " + addr + "\n")
+							writer.Flush()
+							break
+						}
 					}
+				} else {
+					writer.WriteString("PEERADDR " + newSNIPStr + ":" + newSNPortStr + "\n")
+					writer.Flush()
 				}
-				lastSNClient = client
 				continue
 			}
 			if words[1] == "HEARTBEAT" {
