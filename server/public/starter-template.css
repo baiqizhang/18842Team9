@@ -1,0 +1,14 @@
+body {
+  padding-top: 50px;
+}
+.starter-template {
+  padding: 40px 15px;
+  text-align: center;
+}
+
+
+#chart_div {
+    width: auto;
+    margin-left: 15%;
+    margin-right: 15%;
+}

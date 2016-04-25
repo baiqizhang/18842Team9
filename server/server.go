@@ -93,7 +93,7 @@ func processCommand(cmd string) {
 }
 
 func listenHTTP() {
-	http.Handle("/ride/", http.StripPrefix("/ride/", http.FileServer(http.Dir("./public"))))
+	http.Handle("/ride/", http.StripPrefix("/ride/", http.FileServer(http.Dir("../server/public"))))
 	http.HandleFunc("/api/data", dataHandler)
 	http.ListenAndServe(":8080", nil)
 	fmt.Print("web server running on 8080\n")
