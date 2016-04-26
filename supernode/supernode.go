@@ -3,7 +3,9 @@ package main
 import (
 	"dsproject/util"
 	"fmt"
+	"net/http"
 	"os"
+	"strconv"
 )
 
 var port string
@@ -40,6 +42,29 @@ func main() {
 	go listenPeer()
 	go listenHeart()
 
+	// a UI
+	go listenHTTP()
 	// listen to node connection requests? (not sure if is required)
 	listenCarNode()
+}
+
+func listenHTTP() {
+	intPort, _ := strconv.Atoi(port)
+	httpport := strconv.Itoa(intPort + 3)
+
+	fmt.Print("web server running on " + httpport + "\n")
+	http.Handle("/", http.FileServer(http.Dir("../server/public")))
+	http.HandleFunc("/api/data", dataHandler)
+	http.HandleFunc("/api/ride", rideHandler)
+	http.ListenAndServe(":"+httpport, nil)
+}
+
+// Default HTTP Request Handler for UI
+func rideHandler(w http.ResponseWriter, r *http.Request) {
+	sx := r.URL.Query().Get("sx")
+	sy := r.URL.Query().Get("sy")
+	dx := r.URL.Query().Get("dx")
+	dy := r.URL.Query().Get("dy")
+	fmt.Println("[UI] ride request received: " + sx + " " + sy + " " + dx + " " + dy)
+	fmt.Fprintf(w, "result unknown\n")
 }
