@@ -3,17 +3,18 @@ package main
 import (
 	"bufio"
 	"dsproject/util"
-	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
-var clients []*util.Client
-var reqID int
+// var clients []*util.Client
+// var reqID int
 
 func main() {
 	args := os.Args[1:]
@@ -32,8 +33,9 @@ func main() {
 	stdin := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("Enter command: ")
-		cmd, _ := stdin.ReadString('\n')
-		processCommand(cmd)
+		stdin.ReadString('\n')
+		// cmd, _ := stdin.ReadString('\n')
+		// processCommand(cmd)
 	}
 }
 
@@ -50,11 +52,12 @@ func listenTCP() {
 			continue
 		}
 		newClient := util.Client{Conn: conn, Name: "none"}
-		clients = append(clients, &newClient)
+		// clients = append(clients, &newClient)
 		go handleClient(&newClient)
 	}
 }
 
+/*
 // process command from Server Terminal
 func processCommand(cmd string) {
 	args := strings.Split(strings.Trim(cmd, "\r\n"), " ")
@@ -91,56 +94,42 @@ func processCommand(cmd string) {
 		}
 	}
 }
+*/
 
-func listenHTTP() {
-	http.Handle("/ride/", http.StripPrefix("/ride/", http.FileServer(http.Dir("../server/public"))))
-	http.HandleFunc("/api/data", dataHandler)
-	http.ListenAndServe(":8080", nil)
-	fmt.Print("web server running on 8080\n")
+func redirect(w http.ResponseWriter, r *http.Request) {
+	for {
+		l.Lock()
+		aliveSuperNodeAddrs = make([]string, 0, len(superNodeAliveCounter))
+		for k := range superNodeAliveCounter {
+			aliveSuperNodeAddrs = append(aliveSuperNodeAddrs, k)
+		}
+		if len(aliveSuperNodeAddrs) == 0 {
+			l.Unlock()
+			fmt.Println("[Node Register] no SN available, waiting...")
+			time.Sleep(1000 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	fmt.Println("[Node Register] send a random supernode addr")
+	index := rand.Intn(len(aliveSuperNodeAddrs))
+	addrString := aliveSuperNodeAddrs[index]
+	l.Unlock()
+
+	// port for carnodes is port for SN + 1
+	parts := strings.Split(addrString, ":")
+	SNIP := parts[0]
+	SNPort := parts[1]
+	SNPortInt, _ := strconv.Atoi(SNPort)
+	SNPort = strconv.Itoa(SNPortInt + 3)
+
+	http.Redirect(w, r, "http://"+SNIP+":"+SNPort, 301)
 }
 
-// Default HTTP Request Handler for UI
-func dataHandler(w http.ResponseWriter, r *http.Request) {
-	d := DataTable{
-		ColsDesc: []ColDesc{
-			{Label: "X", Type: "number"},
-			{Label: "Y", Type: "number"},
-			{Label: "Y", Type: "number"},
-		},
-		Rows: []Row{
-			{
-				C: []ColVal{
-					{
-						V: 4,
-					},
-					{
-						V: 3,
-					},
-					{
-						V: "null",
-					},
-				},
-			},
-			{
-				C: []ColVal{
-					{
-						V: -1,
-					},
-					{
-						V: "null",
-					},
-					{
-						V: -7,
-					},
-				},
-			},
-		},
-	}
-	b, err := json.MarshalIndent(d, "", "	")
-	if err != nil {
-		fmt.Println(err)
-	}
-	// fmt.Printf("%s\n", b)
-	fmt.Fprintf(w, "%s\n", b)
-	// fmt.Fprintf(w, "<h1>Hello from Team 9 %s!</h1>", r.URL.Path[1:])
+func listenHTTP() {
+	// http.Handle("/ride/", http.StripPrefix("/ride/", http.FileServer(http.Dir("../server/public"))))
+	// http.HandleFunc("/api/data", dataHandler)
+	fmt.Print("web server running on 8080\n")
+	http.HandleFunc("/", redirect)
+	http.ListenAndServe(":8080", nil)
 }

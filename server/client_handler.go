@@ -98,14 +98,13 @@ func handleClient(client *util.Client) {
 		}
 		if words[0] == "NODE" {
 			if words[1] == "REGISTER" {
+				// pick a random alive SN, wait if none available
 				for {
 					l.Lock()
 					aliveSuperNodeAddrs = make([]string, 0, len(superNodeAliveCounter))
 					for k := range superNodeAliveCounter {
 						aliveSuperNodeAddrs = append(aliveSuperNodeAddrs, k)
 					}
-					fmt.Println(aliveSuperNodeAddrs)
-					fmt.Println(len(aliveSuperNodeAddrs))
 					if len(aliveSuperNodeAddrs) == 0 {
 						l.Unlock()
 						fmt.Println("[Node Register] no SN available, waiting...")
