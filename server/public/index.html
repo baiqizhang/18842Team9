@@ -22,6 +22,20 @@
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script type="text/javascript">
 
+    $( document ).ready(function() {
+        console.log( "ready!" );
+        $( ".form-inline" ).submit(function( event ) {
+            console.log("Handler for .submit() called." );
+            $.ajax({
+              url: "/api/ride",
+              data: { sx: "1", sy : "4"} ,              
+            }).done(function() {
+              console.log("api called" );
+            });
+            event.preventDefault();
+        });
+    });
+
     // Load the Visualization API and the piechart package.
     google.charts.load('current', {'packages':['corechart']});
 
