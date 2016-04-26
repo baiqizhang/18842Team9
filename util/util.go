@@ -12,6 +12,16 @@ import (
 // Verbose verbose mode
 var Verbose = 0
 
+//PickupToken a token structure that will be passed among supernodes for visualization and pickup
+type PickupToken struct {
+	Origin string
+	Src    Point
+	Dest   Point
+	Length int
+	Points []Point
+	Addrs  []string
+}
+
 /*
 	Communication
 */
