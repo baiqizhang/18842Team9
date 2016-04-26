@@ -26,9 +26,15 @@
         console.log( "ready!" );
         $( ".form-inline" ).submit(function( event ) {
             console.log("Handler for .submit() called." );
+            var sourceX = $( "#sourceX" ).val();
+            var sourceY = $( "#sourceY" ).val();
+            var destX = $( "#destX" ).val();
+            var destY = $( "#destY" ).val();
+
+
             $.ajax({
               url: "/api/ride",
-              data: { sx: "1", sy : "4"} ,              
+              data: { sx: sourceX, sy : sourceY,dx: destX, dy : destY},
             }).done(function() {
               console.log("api called" );
             });
