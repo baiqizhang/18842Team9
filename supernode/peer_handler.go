@@ -49,7 +49,9 @@ func listenHeart() {
 				conn.Close()
 				break
 			}
-			fmt.Println("[listenHeart] " + msg)
+			if util.Verbose == 1 {
+				fmt.Print("[listenHeart] " + time.Now().Format("20060102150405") + " " + msg)
+			}
 			heart = 1
 		}
 
@@ -76,10 +78,11 @@ func handlePeer(client util.Client) {
 			break
 		}
 		util.CheckError(err)
-
+		fmt.Println("[handlePeer] received:" + message)
 		words := strings.Split(strings.Trim(message, "\r\n"), " ")
 		if words[0] == "NEWCONN" {
-			fmt.Println(time.Now().Format("20060102150405") + " new connection")
+			remoteListeningPort := words[1]
+			fmt.Println("[handlePeer] new connection from " + client.Conn.RemoteAddr().String() + "(" + remoteListeningPort + ")")
 			if lastClient != nil {
 				writer := bufio.NewWriter(lastClient.Conn)
 				newPeerAddr := client.Conn.RemoteAddr()
