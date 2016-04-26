@@ -76,33 +76,14 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	token.Src = *util.ParseFloatCoordinates(sx, sy)
 	token.Length = 1
 	token.Points = make([]util.Point, 1)
-	token.Points[0] = util.Point{X: math.MaxFloat64, Y: math.MaxFloat64}
+	token.Points[0] = util.Point{X: math.MaxFloat64 / 10, Y: math.MaxFloat64 / 10}
+	token.Addrs = make([]string, 1)
 
 	tokenByte, _ := json.Marshal(token)
 	tokenStr := string(tokenByte)
 	fmt.Println("[rideHandler] send token: " + tokenStr)
 
 	/*
-		finalResult := math.MaxFloat64
-		var finalAddr string
-		source := util.ParseFloatCoordinates(sx, sy)
-		//dest := util.ParseFloatCoordinates(args[3], args[4])
-		for carNodeAddr, position := range idleCarNodePosition {
-			fmt.Print("[PICKUP] CNAddr: " + carNodeAddr + " pos:")
-			fmt.Print(position.X)
-			fmt.Print(" ")
-			fmt.Print(position.Y)
-			fmt.Print(" dist: ")
-			dist := position.DistanceTo(*source)
-			if dist < finalResult {
-				finalResult = dist
-				finalAddr = carNodeAddr
-			}
-			fmt.Println(dist)
-		}
-		fmt.Print("[PICKUP] local result: " + finalAddr + " = ")
-		fmt.Println(finalResult)
-
 		// tell the CarNode to pickup
 		writer := bufio.NewWriter(carNodeConn[finalAddr])
 		writer.WriteString("PICKUP " + args[1] + " " + args[2] + " " + args[3] + " " + args[4] + "\n")

@@ -94,13 +94,52 @@ func handlePeer(client util.Client) {
 		}
 		// get a PICKUP_TOKEN, update the result
 		if words[0] == "PICKUP_TOKEN" {
-			var res util.PickupToken
-			err := json.Unmarshal([]byte(words[1]), &res)
+			var token util.PickupToken
+			err := json.Unmarshal([]byte(words[1]), &token)
 			if err != nil {
 				fmt.Println("error when unmarshalling message")
 				continue
 			}
-			fmt.Println(res)
+
+			source := token.Src
+			finalResult := token.Points[0].DistanceTo(source)
+			finalPoint := token.Points[0]
+			finalAddr := token.Addrs[0]
+			//dest := util.ParseFloatCoordinates(args[3], args[4])
+			for carNodeAddr, position := range idleCarNodePosition {
+				fmt.Print("[PICKUP] CNAddr: " + carNodeAddr + " pos:")
+				fmt.Print(position.X)
+				fmt.Print(" ")
+				fmt.Print(position.Y)
+				fmt.Print(" dist: ")
+				dist := position.DistanceTo(source)
+				if dist < finalResult {
+					finalResult = dist
+					finalPoint = position
+					finalAddr = lastClient.Conn.LocalAddr().String() + "|" + carNodeAddr
+				}
+				fmt.Println(dist)
+			}
+			token.Points[0] = finalPoint
+			token.Addrs[0] = finalAddr
+
+			fmt.Print("[PICKUP] local result: " + finalAddr + " = ")
+			fmt.Println(finalResult)
+
+			// check if we've went throught the ring
+			origin := lastClient.Conn.LocalAddr().String()
+			if origin == token.Origin {
+				fmt.Print("[PICKUP] FINAL RESULT: " + finalAddr + " = ")
+				fmt.Println(finalResult)
+			} else {
+				tokenByte, _ := json.Marshal(token)
+				tokenStr := string(tokenByte)
+				fmt.Println("[PICKUP] Pass token: " + tokenStr)
+
+				writerToNextNode := bufio.NewWriter(normalConn)
+				writerToNextNode.WriteString("PICKUP_TOKEN " + tokenStr + "\n")
+				writerToNextNode.Flush()
+			}
 		}
 	}
 }
