@@ -8,6 +8,7 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="">
+    <link rel="icon" href="favicon.ico">
     <!-- <link rel="icon" href="../../favicon.ico"> -->
 
     <title>Distributed Uber Service</title>
@@ -40,8 +41,8 @@
       var options = {
         title: 'Car Location Map',
         hAxis: {title: 'X/m', minValue: -10, maxValue: 10},
-        vAxis: {title: 'Y/m', minValue: -10, maxValue: 10},
-        height:500,
+        vAxis: {title: 'Y/m', minValue: -8, maxValue: 8},
+        height:450,
         legend: 'none'
       };
 
@@ -91,6 +92,21 @@
         <!--Div that will hold the pie chart-->
         <div id="chart_div"></div>
 
+        <form class="form-inline">
+          <div class="form-group">
+            <label>Your location:</label>
+            <input type="number" class="form-control" id="sourceX" placeholder="X">
+            <input type="number" class="form-control" id="sourceY" placeholder="Y">
+          </div>
+          <br><br>
+          <div class="form-group">
+            <label> Destination :</label>
+            <input type="number" class="form-control" id="destX" placeholder="X">
+            <input type="number" class="form-control" id="destY" placeholder="Y">
+          </div>
+          <br><br>
+          <button type="Request" class="btn btn-default">Request a ride</button>
+        </form>
       </div>
 
     </div><!-- /.container -->
