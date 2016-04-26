@@ -54,7 +54,10 @@ func handleNode(client util.Client) {
 		}
 		util.CheckError(err)
 
-		fmt.Println("[Node Message]:" + message)
+		if util.Verbose == 1 {
+			fmt.Println("[Node Message]:" + message)
+		}
+
 		words := strings.Split(strings.Trim(message, "\r\n"), " ")
 
 		if words[0] == "POSITION" {
@@ -66,7 +69,9 @@ func handleNode(client util.Client) {
 				delete(idleCarNodePosition, addrString)
 				delete(carNodeConn, addrString)
 			}
-			fmt.Println(idleCarNodePosition)
+			if util.Verbose == 1 {
+				fmt.Println(idleCarNodePosition)
+			}
 		}
 	}
 }
