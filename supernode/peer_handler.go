@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"dsproject/util"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -90,6 +91,16 @@ func handlePeer(client util.Client) {
 				writer.Flush()
 			}
 			lastClient = &client
+		}
+		// get a PICKUP_TOKEN, update the result
+		if words[0] == "PICKUP_TOKEN" {
+			var res util.PickupToken
+			err := json.Unmarshal([]byte(words[1]), &res)
+			if err != nil {
+				fmt.Println("error when unmarshalling message")
+				continue
+			}
+			fmt.Println(res)
 		}
 	}
 }
