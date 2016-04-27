@@ -53,6 +53,6 @@ func processCommand(cmd string) {
 		peerAddr := args[1]
 		words := strings.Split(peerAddr, ":")
 		go dialPeer(peerAddr)
-		go dialHeart(words[0] + ":" + next_next_port(words[1]))
+		go dialHeart(words[0] + ":" + nextNextPort(words[1]))
 	}
 }

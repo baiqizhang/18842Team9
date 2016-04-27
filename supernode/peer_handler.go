@@ -35,7 +35,7 @@ func listenPeer() {
 
 /* handle the heartbeat connection while listening to it*/
 func listenHeart() {
-	heartport := next_next_port(port)
+	heartport := nextNextPort(port)
 	fmt.Println("Supernode Listening at " + heartport + " for Heartbeat connection")
 	listener, err := net.Listen("tcp", ":"+heartport)
 	util.CheckError(err)
@@ -278,7 +278,7 @@ func dialPeer(peerAddr string) {
 func handleRedirect(ip string, dstport string) {
 	//fmt.Println(time.Now().Format("20060102150405") + " in handle redirect " + ip + " " + dstport)
 	go dialPeer(ip + ":" + dstport)
-	go dialHeart(ip + ":" + next_next_port(dstport))
+	go dialHeart(ip + ":" + nextNextPort(dstport))
 }
 
 func dialHeart(peerAddr string) {
@@ -297,7 +297,7 @@ func dialHeart(peerAddr string) {
 	}
 }
 
-func next_next_port(portstr string) string {
+func nextNextPort(portstr string) string {
 	intPort, _ := strconv.Atoi(portstr)
 	nnport := strconv.Itoa(intPort + 2)
 	return nnport
