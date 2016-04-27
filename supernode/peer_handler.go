@@ -15,6 +15,8 @@ import (
 var lastClient *util.Client // = nil
 var heartConn net.Conn
 var normalConn net.Conn
+var failtoken util.FailureToken
+
 
 func listenPeer() {
 	// listen to node connection requests? (not sure if is required)
@@ -42,6 +44,7 @@ func listenHeart() {
     firstConn := 1
 
     var heart int
+    var heartbeatFrom string
 
 	for {
 		conn, err := listener.Accept()
@@ -55,17 +58,29 @@ func listenHeart() {
 		        for {
 				    time.Sleep(5000 * time.Millisecond)
 				    if heart == 0 {
-					    fmt.Println("Start Failure handling")
-                        localAddr := normalConn.LocalAddr().String()
-                        fmt.Println("Local IP is " +localAddr)
+					    fmt.Println("Start Failure handling") 
+                        /* Generate correct format of the address of failed node so that the other nodes can detect */
                         failAddr := lastClient.Conn.RemoteAddr().String()
-                        fmt.Println("Failed node's IP is " +failAddr)
+                        getIP := strings.Split(failAddr, ":")
+                        newFailAddr := getIP[0] + ":" +heartbeatFrom
+                        fmt.Println("Failed Address is " +newFailAddr)
 
+                        /* Generate the correct format for the address of initiated node so that other nodes can connect */
+                        localAddr := normalConn.LocalAddr().String()
+                        connectToPort := strings.Split(localAddr, ":")
+                        newLocalAddr := connectToPort[0] + ":" + port
+                        fmt.Println("Failure Initiated by node " +newLocalAddr)
+                        
+                        /* Creating a fail token */
+                        failtoken.FailAddr = newFailAddr
+                        failtoken.InitiatedNode = newLocalAddr
+                        failtokenByte, _ := json.Marshal(failtoken)
+                        failtokenStr := string(failtokenByte)
                         failureWriter := bufio.NewWriter(normalConn)
-                        failureWriter.WriteString("FAILURE\n")
+                        failureWriter.WriteString("FAILURE " + failtokenStr + "\n")
                         failureWriter.Flush()
-
-
+                        
+                        /* Prepare for the next new connection and get the heartbeat */
                         firstConn = 1
 					    break
 			    	}
@@ -82,8 +97,11 @@ func listenHeart() {
                 conn.Close()
 				break
 			}
+            /* Get the port to set in case of failure handling */
+            msgSplit := strings.Split(strings.Trim(msg, "\r\n"), " ")
+            heartbeatFrom = msgSplit[2]
 			if util.Verbose == 1 {
-				fmt.Print("[listenHeart] " + time.Now().Format("20060102150405") + " " + msg)
+				fmt.Print("[listenHeart] " + time.Now().Format("20060102150405") + " " + msg +heartbeatFrom)
 			}
             /* Set heartbeat to 1*/
 			heart = 1
@@ -117,11 +135,31 @@ func handlePeer(client util.Client) {
 
         /* To handle failure */
         if words[0] == "FAILURE" {
-        fmt.Println("Received a failure handling message")
-            /*check if failed node is my neighbor*/
-
-            /* forward the token as it is*/
+        fmt.Println("Received failure token")
+        var token util.FailureToken
+        err := json.Unmarshal([]byte(words[1]), &token)
+        if err != nil {
+            fmt.Println("error when unmarshalling failure token")
+            continue
         }
+
+        fmt.Println(token.FailAddr)
+        fmt.Println(token.InitiatedNode)
+        failed := token.FailAddr
+        fmt.Println("Remote address of normal connection is "+normalConn.RemoteAddr().String())
+        /*check if failed node is my neighbor*/
+        if(failed == normalConn.RemoteAddr().String()){
+            fmt.Println("My neighbor has failed")
+            /* establish a connection to the initiated node */
+        } else {
+            /* forward the token as it is*/
+            failureWriter := bufio.NewWriter(normalConn)
+            failureWriter.WriteString("FAILURE " + words[1] + "\n")
+            failureWriter.Flush()
+
+            }
+        }
+
 		// get a PICKUP_TOKEN, update the result
 		if words[0] == "PICKUP_TOKEN" {
 			var token util.PickupToken

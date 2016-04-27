@@ -22,6 +22,11 @@ type PickupToken struct {
 	Addrs  []string
 }
 
+/* FailureToken which gets passed around during ring repair */
+type FailureToken struct {
+    FailAddr string
+    InitiatedNode string
+}
 /*
 	Communication
 */
