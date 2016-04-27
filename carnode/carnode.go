@@ -125,19 +125,19 @@ func processCommand(cmd string, conn net.Conn) {
 		//Start simulation
 		go util.DriveCustomer(&virtualCar, source, dest)
 	} else if args[0] == "" {
-    fmt.Println("SuperNode failure detected")
-    time.Sleep(12500 * time.Millisecond)
-    /* Handling supernode failure, try to get another supernode*/
-	// Get supernode addresses
-	supernodes := getSupernodesAddr()
-	for e := supernodes.Front(); e != nil; e = e.Next() {
-		fmt.Println("[SuperNode Addr]" + e.Value.(string))
+		fmt.Println("SuperNode failure detected")
+		time.Sleep(12500 * time.Millisecond)
+		/* Handling supernode failure, try to get another supernode*/
+		// Get supernode addresses
+		supernodes := getSupernodesAddr()
+		for e := supernodes.Front(); e != nil; e = e.Next() {
+			fmt.Println("[SuperNode Addr]" + e.Value.(string))
+		}
+		if supernodes.Len() == 0 {
+			fmt.Println("No supernode available, exit")
+			os.Exit(0)
+		}
+		//connect to the next available supernode
+		dialSuperNode(supernodes.Front().Value.(string))
 	}
-	if supernodes.Len() == 0 {
-		fmt.Println("No supernode available, exit")
-		os.Exit(0)
-	}
-   //connect to the next available supernode
-	dialSuperNode(supernodes.Front().Value.(string))
-    }
 }
