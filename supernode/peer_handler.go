@@ -32,41 +32,63 @@ func listenPeer() {
 	}
 }
 
+/* handle the heartbeat connection while listening to it*/
 func listenHeart() {
 	heartport := next_next_port(port)
 	fmt.Println("Supernode Listening at " + heartport + " for Heartbeat connection")
 	listener, err := net.Listen("tcp", ":"+heartport)
 	util.CheckError(err)
+    /* 1 means first conn, 0 means it's not*/
+    firstConn := 1
 
-	heart := 1
+    var heart int
+
 	for {
 		conn, err := listener.Accept()
 		util.CheckError(err)
+        /* As soon as it gets the first connection, heartbeat is alive */
+        heart = 1
+        /* Start the thread only once when a peer joins because every node can have only one peer*/
+        if firstConn == 1 {
+            firstConn = 0
+            go func() {
+		        for {
+				    time.Sleep(5000 * time.Millisecond)
+				    if heart == 0 {
+					    fmt.Println("Start Failure handling")
+                        localAddr := normalConn.LocalAddr().String()
+                        fmt.Println("Local IP is " +localAddr)
+                        failAddr := lastClient.Conn.RemoteAddr().String()
+                        fmt.Println("Failed node's IP is " +failAddr)
+
+                        failureWriter := bufio.NewWriter(normalConn)
+                        failureWriter.WriteString("FAILURE\n")
+                        failureWriter.Flush()
+
+
+                        firstConn = 1
+					    break
+			    	}
+                    /* Reset heartbeat to 0 to count the next heartbeat*/
+				    heart = 0
+			    }
+            }()
+        }
 
 		reader := bufio.NewReader(conn)
 		for {
 			msg, err := reader.ReadString('\n')
 			if err != nil {
-				conn.Close()
+                conn.Close()
 				break
 			}
 			if util.Verbose == 1 {
 				fmt.Print("[listenHeart] " + time.Now().Format("20060102150405") + " " + msg)
 			}
+            /* Set heartbeat to 1*/
 			heart = 1
 		}
-
-		go func() {
-			for {
-				time.Sleep(5000 * time.Millisecond)
-				if heart == 0 {
-					fmt.Println("Start Failure handling")
-					break
-				}
-				heart = 0
-			}
-		}()
-	}
+    }
 }
 
 func handlePeer(client util.Client) {
@@ -92,6 +114,14 @@ func handlePeer(client util.Client) {
 			}
 			lastClient = &client
 		}
+
+        /* To handle failure */
+        if words[0] == "FAILURE" {
+        fmt.Println("Received a failure handling message")
+            /*check if failed node is my neighbor*/
+
+            /* forward the token as it is*/
+        }
 		// get a PICKUP_TOKEN, update the result
 		if words[0] == "PICKUP_TOKEN" {
 			var token util.PickupToken
