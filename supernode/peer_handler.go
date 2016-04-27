@@ -120,6 +120,8 @@ func handlePeer(client util.Client) {
 		util.CheckError(err)
 		fmt.Println("[handlePeer] received:" + message)
 		words := strings.Split(strings.Trim(message, "\r\n"), " ")
+
+		// new connection
 		if words[0] == "NEWCONN" {
 			remoteListeningPort := words[1]
 			fmt.Println("[handlePeer] new connection from " + client.Conn.RemoteAddr().String() + "(" + remoteListeningPort + ")")
@@ -198,6 +200,23 @@ func handlePeer(client util.Client) {
 			if origin == token.Origin {
 				fmt.Print("[PICKUP] FINAL RESULT: " + finalAddr + " = ")
 				fmt.Println(finalResult)
+				addrs := strings.Split(strings.Trim(finalAddr, "\r\n"), "|")
+				snAddr := addrs[0]
+				cnAddr := addrs[1]
+				fmt.Println("[PICKUP] inform SN: " + snAddr + "-> CN:" + cnAddr)
+
+				tcpAddr, err := net.ResolveTCPAddr("tcp4", snAddr)
+				util.CheckError(err)
+				destSNAddr, err := net.DialTCP("tcp", nil, tcpAddr)
+				util.CheckError(err)
+
+				destSNWriter := bufio.NewWriter(destSNAddr)
+				destSNWriter.WriteString("PICKUP " + cnAddr + " ")
+				destSNWriter.WriteString(strconv.FormatFloat(token.Src.X, 'f', 4, 64) + " ")
+				destSNWriter.WriteString(strconv.FormatFloat(token.Src.Y, 'f', 4, 64) + " ")
+				destSNWriter.WriteString(strconv.FormatFloat(token.Dest.X, 'f', 4, 64) + " ")
+				destSNWriter.WriteString(strconv.FormatFloat(token.Dest.Y, 'f', 4, 64) + "\n")
+				destSNWriter.Flush()
 			} else {
 				tokenByte, _ := json.Marshal(token)
 				tokenStr := string(tokenByte)
@@ -206,6 +225,17 @@ func handlePeer(client util.Client) {
 				writerToNextNode := bufio.NewWriter(normalConn)
 				writerToNextNode.WriteString("PICKUP_TOKEN " + tokenStr + "\n")
 				writerToNextNode.Flush()
+			}
+		}
+		if words[0] == "PICKUP" {
+			cnAddr := words[1]
+			for addr, conn := range carNodeConn {
+				if addr == cnAddr {
+					fmt.Println("[PICKUP] inform CN:" + cnAddr)
+					cnWriter := bufio.NewWriter(conn)
+					cnWriter.WriteString("PICKUP " + words[2] + " " + words[3] + " " + words[4] + " " + words[5] + "\n")
+					cnWriter.Flush()
+				}
 			}
 		}
 	}
