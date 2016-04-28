@@ -24,9 +24,10 @@ type PickupToken struct {
 
 /* FailureToken which gets passed around during ring repair */
 type FailureToken struct {
-    FailAddr string
-    InitiatedNode string
+	FailAddr      string
+	InitiatedNode string
 }
+
 /*
 	Communication
 */
@@ -97,7 +98,7 @@ type Request struct {
 //DriveCustomer simulate a ride from currentLoc to customerLoc then to destLoc
 func DriveCustomer(car *VirtualCar, customerLoc *Point, dest *Point) {
 	car.Idle = false
-
+	fmt.Println("[Simulation] Car on the way")
 	// simulate picking up customer
 	time.Sleep(5000 * time.Millisecond)
 

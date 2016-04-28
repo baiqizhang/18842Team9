@@ -217,6 +217,11 @@ func handlePeer(client util.Client) {
 				destSNWriter.WriteString(strconv.FormatFloat(token.Dest.X, 'f', 4, 64) + " ")
 				destSNWriter.WriteString(strconv.FormatFloat(token.Dest.Y, 'f', 4, 64) + "\n")
 				destSNWriter.Flush()
+
+				destSNReader := bufio.NewReader(destSNAddr)
+				response, _ := destSNReader.ReadString('\n')
+				response = strings.Trim(response, "\r\n")
+				fmt.Println("[PICKUP] response received:" + response)
 			} else {
 				tokenByte, _ := json.Marshal(token)
 				tokenStr := string(tokenByte)
@@ -227,14 +232,25 @@ func handlePeer(client util.Client) {
 				writerToNextNode.Flush()
 			}
 		}
+
+		// some SN ask this SN to inform some CN to pickup
 		if words[0] == "PICKUP" {
 			cnAddr := words[1]
 			for addr, conn := range carNodeConn {
 				if addr == cnAddr {
 					fmt.Println("[PICKUP] inform CN:" + cnAddr)
 					cnWriter := bufio.NewWriter(conn)
-					cnWriter.WriteString("PICKUP " + words[2] + " " + words[3] + " " + words[4] + " " + words[5] + "\n")
+					_, err := cnWriter.WriteString("PICKUP " + words[2] + " " + words[3] + " " + words[4] + " " + words[5] + "\n")
 					cnWriter.Flush()
+
+					snWriter := bufio.NewWriter(client.Conn)
+					if err != nil {
+						snWriter.WriteString("PICKUP FAIL\n")
+					} else {
+						snWriter.WriteString("PICKUP OK\n")
+					}
+
+					snWriter.Flush()
 				}
 			}
 		}
