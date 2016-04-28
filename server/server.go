@@ -97,6 +97,7 @@ func processCommand(cmd string) {
 */
 
 func redirect(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("[UI] start redirect")
 	for {
 		l.Lock()
 		aliveSuperNodeAddrs = make([]string, 0, len(superNodeAliveCounter))
@@ -124,6 +125,15 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 	SNPort = strconv.Itoa(SNPortInt + 3)
 
 	redirectAddr := "http://" + SNIP + ":" + SNPort
+	if SNIP == "172.31.52.238" {
+		SNIP = "52.23.207.225"
+	}
+	if SNIP == "172.31.52.239" {
+		SNIP = "52.87.202.189"
+	}
+	if SNIP == "172.31.52.240" {
+		SNIP = "52.91.191.21"
+	}
 	fmt.Println("[UI] redirect: " + redirectAddr)
 	http.Redirect(w, r, redirectAddr, 301)
 }
