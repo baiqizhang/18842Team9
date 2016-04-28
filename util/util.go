@@ -100,14 +100,31 @@ type Request struct {
 func DriveCustomer(car *VirtualCar, customerLoc *Point, dest *Point) {
 	car.Idle = false
 	fmt.Println("[Simulation] Car on the way")
+
+	dt := 100.0
+
+	diffx := (customerLoc.X - car.Location.X) / dt
+	diffy := (customerLoc.Y - car.Location.Y) / dt
 	// simulate picking up customer
-	time.Sleep(10000 * time.Millisecond)
+	for i := 0; i < int(dt); i++ {
+		time.Sleep(100 * time.Millisecond)
+		car.Location.X = car.Location.X + diffx
+		car.Location.Y = car.Location.Y + diffy
+	}
 
 	// update current location
 	car.Location = *customerLoc
 	fmt.Println("[Simulation] Customer picked up")
 
-	time.Sleep(10000 * time.Millisecond)
+	diffx = (dest.X - car.Location.X) / dt
+	diffy = (dest.Y - car.Location.Y) / dt
+	// simulate picking up customer
+	for i := 0; i < int(dt); i++ {
+		time.Sleep(100 * time.Millisecond)
+		car.Location.X = car.Location.X + diffx
+		car.Location.Y = car.Location.Y + diffy
+	}
+
 	fmt.Println("[Simulation] Drop customer")
 
 	car.Location = *dest
