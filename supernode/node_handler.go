@@ -12,6 +12,7 @@ import (
 )
 
 var idleCarNodePosition = make(map[string]util.Point)
+var busyCarNodePosition = make(map[string]util.Point)
 var carNodeConn = make(map[string]net.Conn)
 
 func listenCarNode() {
@@ -50,6 +51,7 @@ func handleNode(client util.Client) {
 			time.Sleep(2000 * time.Millisecond)
 		}
 		delete(idleCarNodePosition, addrString)
+		delete(busyCarNodePosition, addrString)
 		delete(carNodeConn, addrString)
 	}()
 
@@ -72,7 +74,11 @@ func handleNode(client util.Client) {
 			if words[3] == "IDLE" {
 				idleCarNodePosition[addrString] = *point
 				carNodeConn[addrString] = client.Conn
+				delete(busyCarNodePosition, addrString)
 			} else {
+				// fmt.Println(words)
+				// fmt.Println(busyCarNodePosition)
+				busyCarNodePosition[addrString] = *point
 				delete(idleCarNodePosition, addrString)
 				delete(carNodeConn, addrString)
 			}

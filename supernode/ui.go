@@ -13,12 +13,15 @@ import (
 )
 
 var visStr string
+var visBusyStr string
 
 func getVis() {
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
+	id := 2
 	for {
 		var token util.PickupToken
-		token.ReqID = -1
+		id = 3 - id
+		token.ReqID = -id
 		token.Origin = lastClient.Conn.LocalAddr().String()
 		token.Src = util.Point{X: 0, Y: 0}
 		token.Length = 10
@@ -63,6 +66,36 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 				{
 					V: point.Y,
 				},
+				{
+					V: "null",
+				},
+			},
+		})
+	}
+
+	err = json.Unmarshal([]byte(visBusyStr), &token)
+	if err != nil {
+		fmt.Println("error when unmarshalling message")
+		return
+	}
+	// fmt.Println("[UI] " + visStr)
+
+	for i := 0; i < token.Length; i++ {
+		point := token.Points[i]
+		if point.X == math.MaxFloat64/10 {
+			continue
+		}
+		row = append(row, Row{
+			C: []ColVal{
+				{
+					V: point.X,
+				},
+				{
+					V: "null",
+				},
+				{
+					V: point.Y,
+				},
 			},
 		})
 	}
@@ -75,22 +108,23 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "%s\r\n", reqMap[id])
 	// delete(reqMap, id)
 
-	for _, point := range idleCarNodePosition {
-		row = append(row, Row{
-			C: []ColVal{
-				{
-					V: point.X,
-				},
-				{
-					V: point.Y,
-				},
-			},
-		})
-	}
+	// for _, point := range idleCarNodePosition {
+	// 	row = append(row, Row{
+	// 		C: []ColVal{
+	// 			{
+	// 				V: point.X,
+	// 			},
+	// 			{
+	// 				V: point.Y,
+	// 			},
+	// 		},
+	// 	})
+	// }
 	d := DataTable{
 		ColsDesc: []ColDesc{
 			{Label: "X", Type: "number"},
-			{Label: "Y", Type: "number"},
+			{Label: "Idle", Type: "number"},
+			{Label: "Busy", Type: "number"},
 			//{Label: "Y", Type: "number"},
 		},
 		Rows: row,

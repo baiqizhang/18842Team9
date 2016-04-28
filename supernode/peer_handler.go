@@ -193,8 +193,13 @@ func handlePeer(client util.Client) {
 			if len != 1 {
 				isVisualization = true
 			}
-			//dest := util.ParseFloatCoordinates(args[3], args[4])
-			for carNodeAddr, position := range idleCarNodePosition {
+
+			carNodePosition := &idleCarNodePosition
+			if isVisualization && token.ReqID == -2 {
+				carNodePosition = &busyCarNodePosition
+			}
+			// fmt.Println(carNodePosition)
+			for carNodeAddr, position := range *carNodePosition {
 				if !isVisualization {
 					fmt.Print("[PICKUP] CNAddr: " + carNodeAddr + " pos:")
 					fmt.Print(position.X)
@@ -268,7 +273,12 @@ func handlePeer(client util.Client) {
 				} else {
 					tokenByte, _ := json.Marshal(token)
 					tokenStr := string(tokenByte)
-					visStr = tokenStr
+					if token.ReqID == -1 {
+						visStr = tokenStr
+					} else {
+						visBusyStr = tokenStr
+					}
+
 					// fmt.Println("[UI] Points:" + tokenStr)
 				}
 			} else {

@@ -101,13 +101,13 @@ func DriveCustomer(car *VirtualCar, customerLoc *Point, dest *Point) {
 	car.Idle = false
 	fmt.Println("[Simulation] Car on the way")
 	// simulate picking up customer
-	time.Sleep(5000 * time.Millisecond)
+	time.Sleep(10000 * time.Millisecond)
 
 	// update current location
 	car.Location = *customerLoc
 	fmt.Println("[Simulation] Customer picked up")
 
-	time.Sleep(5000 * time.Millisecond)
+	time.Sleep(10000 * time.Millisecond)
 	fmt.Println("[Simulation] Drop customer")
 
 	car.Location = *dest
