@@ -40,10 +40,17 @@ func handleNode(client util.Client) {
 
 	go func() {
 		for {
-			writer.WriteString("HEARTBEAT\n")
+			_, err := writer.WriteString("HEARTBEAT\n")
+			delete(idleCarNodePosition, addrString)
+			delete(carNodeConn, addrString)
+			if err != nil {
+				break
+			}
 			writer.Flush()
 			time.Sleep(2000 * time.Millisecond)
 		}
+		delete(idleCarNodePosition, addrString)
+		delete(carNodeConn, addrString)
 	}()
 
 	// Read handler
