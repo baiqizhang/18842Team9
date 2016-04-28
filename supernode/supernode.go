@@ -9,11 +9,12 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 var port string
 
-var reqMap = make(map[int]*http.ResponseWriter)
+var reqMap = make(map[int]string)
 var reqID int
 
 func main() {
@@ -61,7 +62,6 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	dx := r.URL.Query().Get("dx")
 	dy := r.URL.Query().Get("dy")
 	fmt.Println("[UI] ride request received: " + sx + " " + sy + " " + dx + " " + dy)
-	fmt.Fprintf(w, "result unknown\n")
 
 	var token util.PickupToken
 	token.ReqID = reqID
@@ -76,10 +76,19 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	tokenStr := string(tokenByte)
 	fmt.Println("[rideHandler] send token: " + tokenStr)
 
-	reqMap[reqID] = &w
+	id := reqID
+	reqMap[reqID] = ""
+
 	reqID++
 
 	writerToNextNode := bufio.NewWriter(normalConn)
 	writerToNextNode.WriteString("PICKUP_TOKEN " + tokenStr + "\n")
 	writerToNextNode.Flush()
+
+	//forced sync, terrible idea
+	for reqMap[id] == "" {
+		time.Sleep(10 * time.Millisecond)
+	}
+	fmt.Println("[UI] response sent:" + reqMap[id])
+	fmt.Fprintf(w, "%s\r\n", reqMap[id])
 }

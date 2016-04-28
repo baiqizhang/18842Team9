@@ -237,8 +237,7 @@ func handlePeer(client util.Client) {
 				response = strings.Trim(response, "\r\n")
 				fmt.Println("[PICKUP] response received:" + response)
 
-				httpWriter := reqMap[token.ReqID]
-				fmt.Fprintf(httpWriter, "%s", response)
+				reqMap[token.ReqID] = response
 			} else {
 				tokenByte, _ := json.Marshal(token)
 				tokenStr := string(tokenByte)
