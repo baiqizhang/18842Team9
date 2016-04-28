@@ -48,11 +48,14 @@ func listenHTTP() {
 	intPort, _ := strconv.Atoi(port)
 	httpport := strconv.Itoa(intPort + 3)
 
+	go getVis()
+
 	fmt.Print("web server running on " + httpport + "\n")
 	http.Handle("/", http.FileServer(http.Dir("../server/public")))
 	http.HandleFunc("/api/data", dataHandler)
 	http.HandleFunc("/api/ride", rideHandler)
 	http.ListenAndServe(":"+httpport, nil)
+
 }
 
 // Default HTTP Request Handler for UI
@@ -67,6 +70,7 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	token.ReqID = reqID
 	token.Origin = lastClient.Conn.LocalAddr().String()
 	token.Src = *util.ParseFloatCoordinates(sx, sy)
+	token.Dest = *util.ParseFloatCoordinates(dx, dy)
 	token.Length = 1
 	token.Points = make([]util.Point, 1)
 	token.Points[0] = util.Point{X: math.MaxFloat64 / 10, Y: math.MaxFloat64 / 10}
@@ -91,4 +95,5 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("[UI] response sent:" + reqMap[id])
 	fmt.Fprintf(w, "%s\r\n", reqMap[id])
+	delete(reqMap, id)
 }

@@ -126,7 +126,7 @@ func processCommand(cmd string, conn net.Conn) {
 		go util.DriveCustomer(&virtualCar, source, dest)
 	} else if args[0] == "" {
 		fmt.Println("SuperNode failure detected")
-		time.Sleep(12500 * time.Millisecond)
+		time.Sleep(1500 * time.Millisecond)
 		/* Handling supernode failure, try to get another supernode*/
 		// Get supernode addresses
 		supernodes := getSupernodesAddr()

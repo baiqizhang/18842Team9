@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -132,7 +133,9 @@ func handlePeer(client util.Client) {
 			break
 		}
 		util.CheckError(err)
-		fmt.Println("[handlePeer] received:" + message)
+		if len(message) < 20 {
+			fmt.Println("[handlePeer] received:" + message)
+		}
 		words := strings.Split(strings.Trim(message, "\r\n"), " ")
 
 		// new connection
@@ -185,64 +188,95 @@ func handlePeer(client util.Client) {
 			}
 
 			source := token.Src
-			finalResult := token.Points[0].DistanceTo(source)
-			finalPoint := token.Points[0]
-			finalAddr := token.Addrs[0]
+			len := token.Length
+			isVisualization := false
+			if len != 1 {
+				isVisualization = true
+			}
 			//dest := util.ParseFloatCoordinates(args[3], args[4])
 			for carNodeAddr, position := range idleCarNodePosition {
-				fmt.Print("[PICKUP] CNAddr: " + carNodeAddr + " pos:")
-				fmt.Print(position.X)
-				fmt.Print(" ")
-				fmt.Print(position.Y)
-				fmt.Print(" dist: ")
-				dist := position.DistanceTo(source)
-				if dist < finalResult {
-					finalResult = dist
-					finalPoint = position
-					finalAddr = lastClient.Conn.LocalAddr().String() + "|" + carNodeAddr
+				if !isVisualization {
+					fmt.Print("[PICKUP] CNAddr: " + carNodeAddr + " pos:")
+					fmt.Print(position.X)
+					fmt.Print(" ")
+					fmt.Print(position.Y)
+					fmt.Print(" dist: ")
 				}
-				fmt.Println(dist)
+				dist := position.DistanceTo(source)
+				doneFlag := false
+				for i := 0; i < len; i++ {
+					if token.Points[i].X == math.MaxFloat64/10 {
+						token.Points[i] = position
+						token.Addrs[i] = lastClient.Conn.LocalAddr().String() + "|" + carNodeAddr
+						doneFlag = true
+						break
+					}
+				}
+				if !doneFlag {
+					for i := 0; i < len; i++ {
+						if dist < token.Points[i].DistanceTo(source) {
+							token.Points[i] = position
+							token.Addrs[i] = lastClient.Conn.LocalAddr().String() + "|" + carNodeAddr
+							break
+						}
+					}
+				}
 			}
-			token.Points[0] = finalPoint
-			token.Addrs[0] = finalAddr
-
-			fmt.Print("[PICKUP] local result: " + finalAddr + " = ")
-			fmt.Println(finalResult)
-
+			if !isVisualization {
+				fmt.Print("[PICKUP] local result: " + token.Addrs[0] + " = ")
+				fmt.Print(token.Points[0].X)
+				fmt.Print(" ")
+				fmt.Println(token.Points[0].X)
+			}
 			// check if we've went throught the ring
 			origin := lastClient.Conn.LocalAddr().String()
 			if origin == token.Origin {
-				fmt.Print("[PICKUP] FINAL RESULT: " + finalAddr + " = ")
-				fmt.Println(finalResult)
-				addrs := strings.Split(strings.Trim(finalAddr, "\r\n"), "|")
-				snAddr := addrs[0]
-				cnAddr := addrs[1]
-				fmt.Println("[PICKUP] inform SN: " + snAddr + "-> CN:" + cnAddr)
+				if !isVisualization {
+					finalAddr := token.Addrs[0]
+					if !isVisualization {
+						fmt.Print("[PICKUP] FINAL RESULT: " + finalAddr + " = ")
+						fmt.Print(token.Points[0].X)
+						fmt.Print(" ")
+						fmt.Println(token.Points[0].X)
+					}
+					addrs := strings.Split(strings.Trim(finalAddr, "\r\n"), "|")
+					snAddr := addrs[0]
+					cnAddr := addrs[1]
+					if !isVisualization {
+						fmt.Println("[PICKUP] inform SN: " + snAddr + "-> CN:" + cnAddr)
+					}
+					tcpAddr, err := net.ResolveTCPAddr("tcp4", snAddr)
+					util.CheckError(err)
+					destSNAddr, err := net.DialTCP("tcp", nil, tcpAddr)
+					util.CheckError(err)
 
-				tcpAddr, err := net.ResolveTCPAddr("tcp4", snAddr)
-				util.CheckError(err)
-				destSNAddr, err := net.DialTCP("tcp", nil, tcpAddr)
-				util.CheckError(err)
+					destSNWriter := bufio.NewWriter(destSNAddr)
+					destSNWriter.WriteString("PICKUP " + cnAddr + " ")
+					destSNWriter.WriteString(strconv.FormatFloat(token.Src.X, 'f', 4, 64) + " ")
+					destSNWriter.WriteString(strconv.FormatFloat(token.Src.Y, 'f', 4, 64) + " ")
+					destSNWriter.WriteString(strconv.FormatFloat(token.Dest.X, 'f', 4, 64) + " ")
+					destSNWriter.WriteString(strconv.FormatFloat(token.Dest.Y, 'f', 4, 64) + "\n")
+					destSNWriter.Flush()
 
-				destSNWriter := bufio.NewWriter(destSNAddr)
-				destSNWriter.WriteString("PICKUP " + cnAddr + " ")
-				destSNWriter.WriteString(strconv.FormatFloat(token.Src.X, 'f', 4, 64) + " ")
-				destSNWriter.WriteString(strconv.FormatFloat(token.Src.Y, 'f', 4, 64) + " ")
-				destSNWriter.WriteString(strconv.FormatFloat(token.Dest.X, 'f', 4, 64) + " ")
-				destSNWriter.WriteString(strconv.FormatFloat(token.Dest.Y, 'f', 4, 64) + "\n")
-				destSNWriter.Flush()
-
-				destSNReader := bufio.NewReader(destSNAddr)
-				response, _ := destSNReader.ReadString('\n')
-				response = strings.Trim(response, "\r\n")
-				fmt.Println("[PICKUP] response received:" + response)
-
-				reqMap[token.ReqID] = response
+					destSNReader := bufio.NewReader(destSNAddr)
+					response, _ := destSNReader.ReadString('\n')
+					response = strings.Trim(response, "\r\n")
+					if !isVisualization {
+						fmt.Println("[PICKUP] response received:" + response)
+					}
+					reqMap[token.ReqID] = response
+				} else {
+					tokenByte, _ := json.Marshal(token)
+					tokenStr := string(tokenByte)
+					visStr = tokenStr
+					// fmt.Println("[UI] Points:" + tokenStr)
+				}
 			} else {
 				tokenByte, _ := json.Marshal(token)
 				tokenStr := string(tokenByte)
-				fmt.Println("[PICKUP] Pass token: " + tokenStr)
-
+				if !isVisualization {
+					fmt.Println("[PICKUP] Pass token: " + tokenStr)
+				}
 				writerToNextNode := bufio.NewWriter(normalConn)
 				writerToNextNode.WriteString("PICKUP_TOKEN " + tokenStr + "\n")
 				writerToNextNode.Flush()

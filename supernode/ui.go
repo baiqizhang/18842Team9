@@ -3,14 +3,78 @@
 package main
 
 import (
+	"bufio"
+	"dsproject/util"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
+	"time"
 )
+
+var visStr string
+
+func getVis() {
+	time.Sleep(2000 * time.Millisecond)
+	for {
+		var token util.PickupToken
+		token.ReqID = -1
+		token.Origin = lastClient.Conn.LocalAddr().String()
+		token.Src = util.Point{X: 0, Y: 0}
+		token.Length = 10
+		token.Points = make([]util.Point, 10)
+		for i := 0; i < token.Length; i++ {
+			token.Points[i] = util.Point{X: math.MaxFloat64 / 10, Y: math.MaxFloat64 / 10}
+		}
+		token.Addrs = make([]string, 10)
+
+		tokenByte, _ := json.Marshal(token)
+		tokenStr := string(tokenByte)
+
+		writerToNextNode := bufio.NewWriter(normalConn)
+		writerToNextNode.WriteString("PICKUP_TOKEN " + tokenStr + "\n")
+		writerToNextNode.Flush()
+
+		time.Sleep(1000 * time.Millisecond)
+	}
+}
 
 // Default HTTP Request Handler for UI
 func dataHandler(w http.ResponseWriter, r *http.Request) {
+	var token util.PickupToken
+	err := json.Unmarshal([]byte(visStr), &token)
+	if err != nil {
+		fmt.Println("error when unmarshalling message")
+		return
+	}
 	row := make([]Row, 0, 10)
+	// fmt.Println("[UI] " + visStr)
+
+	for i := 0; i < token.Length; i++ {
+		point := token.Points[i]
+		if point.X == math.MaxFloat64/10 {
+			continue
+		}
+		row = append(row, Row{
+			C: []ColVal{
+				{
+					V: point.X,
+				},
+				{
+					V: point.Y,
+				},
+			},
+		})
+	}
+
+	// //forced sync, terrible idea
+	// for reqMap[id] == "" {
+	// 	time.Sleep(10 * time.Millisecond)
+	// }
+	// fmt.Println("[UI] response sent:" + reqMap[id])
+	// fmt.Fprintf(w, "%s\r\n", reqMap[id])
+	// delete(reqMap, id)
+
 	for _, point := range idleCarNodePosition {
 		row = append(row, Row{
 			C: []ColVal{
