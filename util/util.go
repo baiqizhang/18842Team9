@@ -34,7 +34,7 @@ type FailureToken struct {
 */
 
 //ServerAddr address of the central server
-const ServerAddr = "127.0.0.1:7070"
+const ServerAddr = "ec2-52-87-240-92.compute-1.amazonaws.com:7070"
 
 //Client a struct that models a TCP Client by connection and name
 type Client struct {
