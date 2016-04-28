@@ -17,6 +17,13 @@ var heartConn net.Conn
 var normalConn net.Conn
 var failtoken util.FailureToken
 
+func reestablishRing(token util.FailureToken) {
+	fmt.Println("My neighbor has failed")
+	peerAddr := token.InitiatedNode
+	fmt.Println("peerAddr: " + peerAddr)
+	processCommand("PEERADDR " + peerAddr)
+}
+
 func listenPeer() {
 	// listen to node connection requests? (not sure if is required)
 	listener, err := net.Listen("tcp", ":"+port)
@@ -74,10 +81,17 @@ func listenHeart() {
 						failtoken.FailAddr = newFailAddr
 						failtoken.InitiatedNode = newLocalAddr
 						failtokenByte, _ := json.Marshal(failtoken)
-						failtokenStr := string(failtokenByte)
-						failureWriter := bufio.NewWriter(normalConn)
-						failureWriter.WriteString("FAILURE " + failtokenStr + "\n")
-						failureWriter.Flush()
+
+						remoteAddr := normalConn.RemoteAddr().String()
+						failed := failtoken.FailAddr
+						if failed == remoteAddr {
+							reestablishRing(failtoken)
+						} else {
+							failtokenStr := string(failtokenByte)
+							failureWriter := bufio.NewWriter(normalConn)
+							failureWriter.WriteString("FAILURE " + failtokenStr + "\n")
+							failureWriter.Flush()
+						}
 
 						/* Prepare for the next new connection and get the heartbeat */
 						firstConn = 1
@@ -152,12 +166,12 @@ func handlePeer(client util.Client) {
 			if failed == normalConn.RemoteAddr().String() {
 				fmt.Println("My neighbor has failed")
 				/* establish a connection to the initiated node */
+				reestablishRing(token)
 			} else {
 				/* forward the token as it is*/
 				failureWriter := bufio.NewWriter(normalConn)
 				failureWriter.WriteString("FAILURE " + words[1] + "\n")
 				failureWriter.Flush()
-
 			}
 		}
 
