@@ -23,6 +23,8 @@
     <script type="text/javascript">
 
     $( document ).ready(function() {
+        setInterval(drawChart, 2000);
+
         console.log( "ready!" );
         $( ".form-inline" ).submit(function( event ) {
             console.log("Handler for .submit() called." );

@@ -10,41 +10,62 @@ import (
 
 // Default HTTP Request Handler for UI
 func dataHandler(w http.ResponseWriter, r *http.Request) {
+	row := make([]Row, 0, 10)
+	for _, point := range idleCarNodePosition {
+		row = append(row, Row{
+			C: []ColVal{
+				{
+					V: point.X,
+				},
+				{
+					V: point.Y,
+				},
+			},
+		})
+	}
 	d := DataTable{
 		ColsDesc: []ColDesc{
 			{Label: "X", Type: "number"},
 			{Label: "Y", Type: "number"},
-			{Label: "Y", Type: "number"},
+			//{Label: "Y", Type: "number"},
 		},
-		Rows: []Row{
-			{
-				C: []ColVal{
-					{
-						V: 4,
-					},
-					{
-						V: 3,
-					},
-					{
-						V: "null",
-					},
-				},
-			},
-			{
-				C: []ColVal{
-					{
-						V: -1,
-					},
-					{
-						V: "null",
-					},
-					{
-						V: -7,
-					},
-				},
-			},
-		},
+		Rows: row,
 	}
+	// d := DataTable{
+	// 	ColsDesc: []ColDesc{
+	// 		{Label: "X", Type: "number"},
+	// 		{Label: "Y", Type: "number"},
+	// 		//{Label: "Y", Type: "number"},
+	// 	},
+	// 	Rows: []Row{
+	// 		{
+	// 			C: []ColVal{
+	// 				{
+	// 					V: 4,
+	// 				},
+	// 				{
+	// 					V: 3,
+	// 				},
+	// 				{
+	// 					V: "null",
+	// 				},
+	// 			},
+	// 		},
+	// 		{
+	// 			C: []ColVal{
+	// 				{
+	// 					V: -1,
+	// 				},
+	// 				{
+	// 					V: "null",
+	// 				},
+	// 				{
+	// 					V: -7,
+	// 				},
+	// 			},
+	// 		},
+	// 	},
+	// }
 	b, err := json.MarshalIndent(d, "", "	")
 	if err != nil {
 		fmt.Println(err)
