@@ -123,7 +123,9 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 	SNPortInt, _ := strconv.Atoi(SNPort)
 	SNPort = strconv.Itoa(SNPortInt + 3)
 
-	http.Redirect(w, r, "http://"+SNIP+":"+SNPort, 301)
+	redirectAddr := "http://" + SNIP + ":" + SNPort
+	fmt.Println("[UI] redirect: " + redirectAddr)
+	http.Redirect(w, r, redirectAddr, 301)
 }
 
 func listenHTTP() {
