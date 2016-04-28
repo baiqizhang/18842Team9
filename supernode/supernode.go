@@ -12,17 +12,9 @@ import (
 )
 
 var port string
-var clients []util.Client
-var name string
 
-//REQMAP map for <request id, request struct>
-var REQMAP = make(map[string]util.Request)
-
-//COUNTCAR counter for carnodes which are ordinary nodes and counter for supernodes
-var COUNTCAR int // 0 is the default value
-
-//COUNTSUPER variable export comment placeholder
-var COUNTSUPER int // 0 is the default value
+var reqMap = make(map[int]*http.ResponseWriter)
+var reqID int
 
 func main() {
 	args := os.Args[1:]
@@ -72,6 +64,7 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "result unknown\n")
 
 	var token util.PickupToken
+	token.ReqID = reqID
 	token.Origin = lastClient.Conn.LocalAddr().String()
 	token.Src = *util.ParseFloatCoordinates(sx, sy)
 	token.Length = 1
@@ -83,12 +76,9 @@ func rideHandler(w http.ResponseWriter, r *http.Request) {
 	tokenStr := string(tokenByte)
 	fmt.Println("[rideHandler] send token: " + tokenStr)
 
-	/*
-		// tell the CarNode to pickup
-		writer := bufio.NewWriter(carNodeConn[finalAddr])
-		writer.WriteString("PICKUP " + args[1] + " " + args[2] + " " + args[3] + " " + args[4] + "\n")
-		writer.Flush()
-	*/
+	reqMap[reqID] = &w
+	reqID++
+
 	writerToNextNode := bufio.NewWriter(normalConn)
 	writerToNextNode.WriteString("PICKUP_TOKEN " + tokenStr + "\n")
 	writerToNextNode.Flush()

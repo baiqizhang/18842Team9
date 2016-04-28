@@ -14,6 +14,7 @@ var Verbose = 0
 
 //PickupToken a token structure that will be passed among supernodes for visualization and pickup
 type PickupToken struct {
+	ReqID  int
 	Origin string
 	Src    Point
 	Dest   Point
